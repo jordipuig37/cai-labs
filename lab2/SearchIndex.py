@@ -1,4 +1,4 @@
-S"""
+"""
 .. module:: SearchIndex
 
 SearchIndex
@@ -17,6 +17,7 @@ SearchIndex
 :Created on: 04/07/2017 10:56
 
 """
+
 from __future__ import print_function
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
@@ -50,7 +51,7 @@ if __name__ == '__main__':
         if text is not None:
             q = Q('multi_match', query=text, fields=['text'])
             s = s.query(q)
-            s = s.highlight('text', fragment_size=10)
+            s = s.highlight('z', fragment_size=20)
             response = s.execute()
 
             for r in s.scan(): # scan allows to retrieve all matches
