@@ -23,6 +23,8 @@ from elasticsearch.client import CatClient
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import Q
 
+from math import sqrt, log2
+
 import argparse
 
 import numpy as np
@@ -91,8 +93,10 @@ def toTFIDF(client, index, file_id):
     for (t, w),(_, df) in zip(file_tv, file_df):
         #
         # Something happens here
+        tf = w / max_freq
+        idf = log2(dcount / df)
+        tfidfw.append((t, tf*idf))
         #
-        pass
 
     return normalize(tfidfw)
 
@@ -104,8 +108,11 @@ def print_term_weigth_vector(twv):
     """
     #
     # Program something here
+    print('[', end='')
+    for t,w in twv:
+        print('(', t, ',', w, ')', sep='')
+    print(']')
     #
-    pass
 
 
 def normalize(tw):
@@ -117,8 +124,15 @@ def normalize(tw):
     """
     #
     # Program something here
+    norm = 0;
+    for t, w in tw:
+        norm += w*w
+    norm = sqrt(norm)
+    aux = []
+    for t,w in tw:
+        aux.append((t, w/norm))
     #
-    return None
+    return aux
 
 
 def cosine_similarity(tw1, tw2):
@@ -130,8 +144,23 @@ def cosine_similarity(tw1, tw2):
     """
     #
     # Program something here
+    tw1 = normalize(tw1)
+    tw2 = normalize(tw2)
+    
+    scalar = 0
+    for t, w in tw1:
+        l, r = 0, len(tw2)
+        while (l <= r):
+            m = (l+r)//2
+            if (tw2[m][0] == t):
+                scalar += tw2[m][1] * w
+                break
+            elif (tw2[m][0] < t):
+                l = m+1
+            else:
+                r = m-1
     #
-    return 0
+    return scalar
 
 def doc_count(client, index):
     """
@@ -182,4 +211,3 @@ if __name__ == '__main__':
 
     except NotFoundError:
         print(f'Index {index} does not exists')
-
