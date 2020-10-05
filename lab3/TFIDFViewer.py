@@ -149,7 +149,7 @@ def cosine_similarity(tw1, tw2):
     
     scalar = 0
     for t, w in tw1:
-        l, r = 0, len(tw2)
+        l, r = 0, len(tw2)-1
         while (l <= r):
             m = (l+r)//2
             if (tw2[m][0] == t):
