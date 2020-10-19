@@ -52,7 +52,7 @@ def merge_dicts(dict_a, a, dict_b, b, k):
     for term, w in dict_a.items():
         new_weight = a * w
         result[term] = new_weight
-    
+
     for term, w in dict_b.items():
         new_weight = b * w / k
         if term in result:
@@ -101,8 +101,10 @@ if __name__ == '__main__':
         s = Search(using=client, index=index)
 
         if query is not None:
+            # from list of strings to dictionary here?
             for i in range(n):
-                q = Q('query_string',query=query[0])
+                q = Q('query_string',query=query[0]) ## arguments passed through iterating the dictionary.
+                # how is the relevance information (^ operator i query) passed??
                 for i in range(1, len(query)):
                     q &= Q('query_string',query=query[i])
 
