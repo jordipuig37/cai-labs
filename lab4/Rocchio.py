@@ -64,6 +64,36 @@ def merge_dicts(dict_a, a, dict_b, b, k):
     return result
 """
 
+""" UTILITY FUNCTIONS """
+
+# Returns the sum of two dics
+def add(d1, d2):
+    return {}
+
+# Returns the sum of all the items in dics
+def add_all(dics):
+    total = {}
+    for d in dics:
+        total = add(total, d)
+    return total
+
+# Returns the multiplication of dic by value
+def multiply_by(dic, value):
+    for term, weight in dic.items():
+        dic[term] = weight * value
+    return dic
+
+# Returns the weights from a list of string in dic format
+def get_weights(query):
+    return {}
+
+# Writes the weights into the query
+def set_weights(query, new_weights):
+    return query
+
+
+""" MAIN FUNCTION """
+
 # s: Connection to database
 def rocchio(query, s, client, index):
     # Get K most relevant documents
