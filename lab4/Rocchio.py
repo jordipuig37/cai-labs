@@ -30,13 +30,14 @@ from elasticsearch_dsl.query import Q
 
 from TFIDFViewer import to_dict_TFIDF
 
-__author__ = 'jerry-master and jordipiug37'
+__author__ = 'jerry-master and jordipuig37'
 
-### Global variable k and n
-k = 10 # the k-ths first documents are considered Relevant (k = R)
-n = 10
-alpha = 1
-beta = 1
+### GLOBAL VARIABLES
+K = 10 # the k-ths first documents are considered Relevant (k = R)
+NROUNDS = 10
+R = 100 # maximum number of relevant documents
+ALPHA = 1
+BETA = 1
 
 def split_word_weight(w):
     i = 0
@@ -46,7 +47,7 @@ def split_word_weight(w):
         else:
             i += 1
 
-# specific function to merge dictionarys using Rocchino's law
+# specific function to merge dictionaries using Rocchio's law
 def merge_dicts(dict_a, a, dict_b, b, k):
     result = dict()
     for term, w in dict_a.items():
@@ -62,8 +63,26 @@ def merge_dicts(dict_a, a, dict_b, b, k):
 
     return result
 
+# s: Connection to database
+def rocchio(query, s, client, index):
+    # Get K most relevant documents
+    response = get_docs(query, s, K)
+    # Convert them to tf-idf
+    response = [toTFIDF(client, index, r.meta.id) for r in response]
+    # Add them up, divide by total and multiply by beta
+    beta_term = add_all(response)
+    beta_term = multiply_by(beta_term, BETA / len(response))
 
-def rocchio(query, response, index):
+    # Get weights from query in dictionary format
+    weights = get_weights(query)
+    # Multiply the query by alpha and add everything
+    alpha_term = multiply_by(weights, ALPHA)
+    new_weights = add_all([alpha_term, beta_term])
+
+    # Put the weights back into string format
+    return set_weights(quey, new_weights)
+
+    """
     # convert the query list of strings to a dictionary (?)
     dict_query = dict()
     for word in query:
@@ -80,7 +99,17 @@ def rocchio(query, response, index):
         dict_query = merge_dicts(dict_query, alpha, doc, beta, k)
 
     return dict_query
+    """
 
+# s: Connection to database
+# nhits: maximum number of documents to retrieve
+def get_docs(query, s, nhits):
+    q = Q('query_string',query=query[0]) 
+    for i in range(1, len(query)):
+        q &= Q('query_string',query=query[i])
+
+    s = s.query(q)
+    return s[0:nhits].execute()
 
 
 if __name__ == '__main__':
@@ -101,17 +130,13 @@ if __name__ == '__main__':
         s = Search(using=client, index=index)
 
         if query is not None:
-            # from list of strings to dictionary here?
-            for i in range(n):
-                q = Q('query_string',query=query[0]) ## arguments passed through iterating the dictionary.
-                # how is the relevance information (^ operator i query) passed??
-                for i in range(1, len(query)):
-                    q &= Q('query_string',query=query[i])
 
-                s = s.query(q)
-                response = s[0:nhits].execute()
+            # Update query multiple times
+            for _ in NROUNDS:
+                query = rocchio(query, s)
 
-                query = rocchio(query, response, index)
+            # Finally make the query 
+            response = get_docs(query, s, nhits)
 
             for r in response:  # only returns a specific number of results
                 print(f'ID= {r.meta.id} SCORE={r.meta.score}')
