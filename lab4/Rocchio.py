@@ -38,7 +38,7 @@ NROUNDS = 10
 R = 100 # maximum number of relevant documents
 ALPHA = 1
 BETA = 1
-
+"""
 def split_word_weight(w):
     i = 0
     for l in w:
@@ -62,6 +62,7 @@ def merge_dicts(dict_a, a, dict_b, b, k):
             result[term] = new_weight
 
     return result
+"""
 
 # s: Connection to database
 def rocchio(query, s, client, index):
@@ -80,7 +81,7 @@ def rocchio(query, s, client, index):
     new_weights = add_all([alpha_term, beta_term])
 
     # Put the weights back into string format
-    return set_weights(quey, new_weights)
+    return set_weights(query, new_weights)
 
     """
     # convert the query list of strings to a dictionary (?)
