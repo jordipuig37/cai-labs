@@ -92,7 +92,7 @@ def truncate(dic,R):
 
 def add(d1, d2):
     result = d1
-    for term, w in dict_b.items():
+    for term, w in d2.items():
         if term in result:
             result[term] += w
         else:
