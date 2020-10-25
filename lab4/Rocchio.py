@@ -204,7 +204,7 @@ if __name__ == '__main__':
 
             # Update query multiple times
             for _ in range(NROUNDS):
-                query = rocchio(query, s)
+                query = rocchio(query, s, client, index)
 
             # Finally make the query
             response = get_docs(query, s, nhits)
