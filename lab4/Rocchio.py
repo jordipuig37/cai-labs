@@ -139,7 +139,7 @@ def rocchio(query, s, client, index):
     # Get K most relevant documents
     response = get_docs(query, s, K)
     # Convert them to tf-idf
-    response = [truncate(toTFIDF(client, index, r.meta.id), R) for r in response]
+    response = [truncate(to_dict_TFIDF(client, index, r.meta.id), R) for r in response]
     # Add them up, divide by total and multiply by beta
     beta_term = add_all(response)
     beta_term = multiply_by(beta_term, BETA / len(response))
