@@ -203,7 +203,7 @@ if __name__ == '__main__':
         if query is not None:
 
             # Update query multiple times
-            for _ in NROUNDS:
+            for _ in range(NROUNDS):
                 query = rocchio(query, s)
 
             # Finally make the query
