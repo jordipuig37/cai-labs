@@ -30,12 +30,14 @@ from elasticsearch_dsl.query import Q
 
 from TFIDFViewer import to_dict_TFIDF
 
+from minHeap import MinHeap
+
 __author__ = 'jerry-master and jordipuig37'
 
 ### GLOBAL VARIABLES
 K = 10 # the k-ths first documents are considered Relevant (k = R)
 NROUNDS = 10
-R = 100 # maximum number of relevant documents
+R = 100 # maximum number of relevant terms
 ALPHA = 1
 BETA = 1
 """
@@ -67,14 +69,31 @@ def merge_dicts(dict_a, a, dict_b, b, k):
 """ UTILITY FUNCTIONS """
 
 # Returns the sum of two dics
+def truncate(dic,R):
+    cont = 0
+    res = dict()
+    for t,w in dic.items():
+        if (cont == R):
+            return res
+        res[t] = w
+        cont += 1
+    return res
+
 def add(d1, d2):
-    return {}
+    result = d1
+    for term, w in dict_b.items():
+        if term in result:
+            result[term] += w
+        else:
+            result[term] = w
+    return result
 
 # Returns the sum of all the items in dics
 def add_all(dics):
     total = {}
     for d in dics:
         total = add(total, d)
+        total = truncate(total, R)
     return total
 
 # Returns the multiplication of dic by value
@@ -95,7 +114,8 @@ def get_weights(query):
 
 # Writes the weights into the query
 def set_weights(query, new_weights):
-    return query
+    for 
+    return to_query(dict_query)
 
 
 """ MAIN FUNCTION """
@@ -105,7 +125,7 @@ def rocchio(query, s, client, index):
     # Get K most relevant documents
     response = get_docs(query, s, K)
     # Convert them to tf-idf
-    response = [toTFIDF(client, index, r.meta.id) for r in response]
+    response = [truncate(toTFIDF(client, index, r.meta.id), R) for r in response]
     # Add them up, divide by total and multiply by beta
     beta_term = add_all(response)
     beta_term = multiply_by(beta_term, BETA / len(response))
@@ -114,10 +134,10 @@ def rocchio(query, s, client, index):
     weights = get_weights(query)
     # Multiply the query by alpha and add everything
     alpha_term = multiply_by(weights, ALPHA)
-    new_weights = add_all([alpha_term, beta_term])
+    new_query = add_all([alpha_term, beta_term])
 
     # Put the weights back into string format
-    return set_weights(query, new_weights)
+    return set_weights(new_query, R)
 
     """
     # convert the query list of strings to a dictionary (?)
