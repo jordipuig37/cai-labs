@@ -30,7 +30,7 @@ from elasticsearch_dsl.query import Q
 
 from TFIDFViewer import to_dict_TFIDF
 
-from minHeap import MinHeap
+from heapq import heapify, heappush, heappop
 
 __author__ = 'jerry-master and jordipuig37'
 
@@ -71,13 +71,24 @@ def merge_dicts(dict_a, a, dict_b, b, k):
 # Returns the sum of two dics
 def truncate(dic,R):
     cont = 0
-    res = dict()
+    heap = []
     for t,w in dic.items():
         if (cont == R):
-            return res
-        res[t] = w
+            heapify(heap)
+        elif (cont < R):
+            heap.append((w,t))
+        else:
+            heappush(heap, (w,t))
+            heappop(heap)
         cont += 1
+    
+    res = dict()
+    for w,t in heap:
+        res[t] = w
     return res
+    
+    
+
 
 def add(d1, d2):
     result = d1
