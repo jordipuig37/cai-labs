@@ -85,7 +85,13 @@ def multiply_by(dic, value):
 
 # Returns the weights from a list of string in dic format
 def get_weights(query):
-    return {}
+    dict_query = dict()
+    for word in query:
+        weight = 1
+        if "^" in word:
+            word, weight = split_word(word)
+        dict_query[word] = weight
+    return dict_query
 
 # Writes the weights into the query
 def set_weights(query, new_weights):
@@ -135,7 +141,7 @@ def rocchio(query, s, client, index):
 # s: Connection to database
 # nhits: maximum number of documents to retrieve
 def get_docs(query, s, nhits):
-    q = Q('query_string',query=query[0]) 
+    q = Q('query_string',query=query[0])
     for i in range(1, len(query)):
         q &= Q('query_string',query=query[i])
 
@@ -166,7 +172,7 @@ if __name__ == '__main__':
             for _ in NROUNDS:
                 query = rocchio(query, s)
 
-            # Finally make the query 
+            # Finally make the query
             response = get_docs(query, s, nhits)
 
             for r in response:  # only returns a specific number of results
