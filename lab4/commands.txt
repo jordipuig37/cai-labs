@@ -1,4 +1,4 @@
-python IndexFilesPreprocess.py --index news --path /20_newsgroups --token standard --filter lowercase asciifolding snowball
+python IndexFilesPreprocess.py --index news --path 20_newsgroups --token standard --filter lowercase asciifolding
 
 python SearchIndexWeights.py --index news --nhits 5 --query toronto nyc
 
