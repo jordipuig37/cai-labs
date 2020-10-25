@@ -89,8 +89,8 @@ def get_weights(query):
     for word in query:
         weight = 1
         if "^" in word:
-            word, weight = split_word(word)
-        dict_query[word] = weight
+            word, weight = word.split('^') #split_word(word)
+        dict_query[word] = float(weight)
     return dict_query
 
 # Writes the weights into the query
