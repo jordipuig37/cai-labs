@@ -112,10 +112,13 @@ def get_weights(query):
         dict_query[word] = float(weight)
     return dict_query
 
-# Writes the weights into the query
-def set_weights(query, new_weights):
-    for 
-    return to_query(dict_query)
+# Writes the weights from a dictionary into the query in stringformat
+def set_weights(new_weights):
+    query = []
+    for term, weight in new_weights.items():
+        s = term + "^" + str(weight)
+        query.append(s)
+    return query
 
 
 """ MAIN FUNCTION """
