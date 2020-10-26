@@ -36,35 +36,10 @@ __author__ = 'jerry-master and jordipuig37'
 
 ### GLOBAL VARIABLES
 K = 10 # the k-ths first documents are considered Relevant (k = R)
-NROUNDS = 10
-R = 100 # maximum number of relevant terms
+NROUNDS = 5
+R = 2 # maximum number of relevant terms
 ALPHA = 1
 BETA = 1
-"""
-def split_word_weight(w):
-    i = 0
-    for l in w:
-        if l == "^":
-            return w[0:i], w[i+1:-1] # returns the real word and its weight (assuming w = real_word^weight)
-        else:
-            i += 1
-
-# specific function to merge dictionaries using Rocchio's law
-def merge_dicts(dict_a, a, dict_b, b, k):
-    result = dict()
-    for term, w in dict_a.items():
-        new_weight = a * w
-        result[term] = new_weight
-
-    for term, w in dict_b.items():
-        new_weight = b * w / k
-        if term in result:
-            result[term] += new_weight
-        else:
-            result[term] = new_weight
-
-    return result
-"""
 
 """ UTILITY FUNCTIONS """
 
@@ -81,14 +56,11 @@ def truncate(dic,R):
             heappush(heap, (w,t))
             heappop(heap)
         cont += 1
-    
+
     res = dict()
     for w,t in heap:
         res[t] = w
     return res
-    
-    
-
 
 def add(d1, d2):
     result = d1
@@ -141,6 +113,8 @@ def rocchio(query, s, client, index):
     # Convert them to tf-idf
     response = [truncate(to_dict_TFIDF(client, index, r.meta.id), R) for r in response]
     # Add them up, divide by total and multiply by beta
+    if len(response) == 0:
+        return query
     beta_term = add_all(response)
     beta_term = multiply_by(beta_term, BETA / len(response))
 
@@ -151,26 +125,7 @@ def rocchio(query, s, client, index):
     new_query = add_all([alpha_term, beta_term])
 
     # Put the weights back into string format
-    return set_weights(new_query, R)
-
-    """
-    # convert the query list of strings to a dictionary (?)
-    dict_query = dict()
-    for word in query:
-        weight = 1
-        if "^" in word:
-            word, weight = split_word(word)
-        dict_query[word] = weight
-
-    # compute the TF-IDF for each document in response[0:k]
-    # and merge with the dict_query
-    # client = Elasticsearch()
-    for file in response[0:k]:
-        doc = toTFIDF(client, index, file)
-        dict_query = merge_dicts(dict_query, alpha, doc, beta, k)
-
-    return dict_query
-    """
+    return set_weights(new_query)
 
 # s: Connection to database
 # nhits: maximum number of documents to retrieve
