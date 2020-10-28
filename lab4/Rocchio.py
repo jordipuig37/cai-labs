@@ -35,9 +35,9 @@ from heapq import heapify, heappush, heappop
 __author__ = 'jerry-master and jordipuig37'
 
 ### GLOBAL VARIABLES
-K = 10 # the k-ths first documents are considered Relevant (k = R)
+K = 10 # the k-ths first documents are considered Relevant
 NROUNDS = 5
-R = 2 # maximum number of relevant terms
+R, r = 1000, 2 # maximum number of relevant terms
 ALPHA = 1
 BETA = 1
 
@@ -63,6 +63,10 @@ def truncate(dic,R):
     return res
 
 def add(d1, d2):
+    # More efficient if d1 < d2
+    if (len(d1) > len(d2)):
+        return add(d2, d1)
+
     result = d1
     for term, w in d2.items():
         if term in result:
@@ -89,9 +93,12 @@ def multiply_by(dic, value):
 def get_weights(query):
     dict_query = dict()
     for word in query:
-        weight = 1
-        if "^" in word:
-            word, weight = word.split('^') #split_word(word)
+        weight = 1 
+        if '^' in word:
+            word, weight = word.split('^') 
+            if '~' in weight:
+                fuzzy, weight = weight.split('~')
+                word = word + '~' + fuzzy
         dict_query[word] = float(weight)
     return dict_query
 
@@ -123,6 +130,7 @@ def rocchio(query, s, client, index):
     # Multiply the query by alpha and add everything
     alpha_term = multiply_by(weights, ALPHA)
     new_query = add_all([alpha_term, beta_term])
+    new_query = truncate(new_query, r)
 
     # Put the weights back into string format
     return set_weights(new_query)
