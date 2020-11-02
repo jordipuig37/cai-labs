@@ -90,12 +90,13 @@ def dict_dist(d1, d2):
     return sqrt(s)
 
 ### MAIN FUNCTION
+MAX_ITERATIONS = 200
 def compute_pageranks(G, d):
     n = len(G)
     P = make_dic(G, 0)
     iterations = 0
     distance = 1
-    while distance > 10e-7:
+    while iterations < MAX_ITERATIONS and distance > 10e-7:
         iterations += 1
         Pnew = make_dic(G, d)
         for i , L in G.items():
@@ -110,10 +111,21 @@ def compute_pageranks(G, d):
         P = Pnew
     return P, iterations
 
+def compute_pageranks_simmetric(G):
+    n = len(G)
+    P = make_dic(G, 0)
+    E = 0
+    for i , L in G.items():
+        E += len(L)
+        P[i] = len(L)
+    for k in P.keys():
+        P[k] /= 2 * E
+    return P
+
 def output_pageranks(l):
     l = [(key,val) for key,val in l.items()]
     # sort decreasingly by rank
-    l = sorted(l, key=lambda tup: -tup[1])
+    l = sorted(l, key=lambda tup: tup[1])
     sum = 0
     for (name, rank) in l:
         print(name+":", rank)
@@ -130,15 +142,29 @@ def rank_simple_graph():
     print("Time to computePageRanks():", time2-time1)
 
 def rank_airports():
-    damping_factor = 0.85  # Change
+    damping_factor = 0.9  # Change
     airp = read_airports()
     routes = read_routes(airp)
     time1 = time.time()
     pageranks, iterations = compute_pageranks(routes,damping_factor)
     time2 = time.time()
+    if iterations == MAX_ITERATIONS:
+        print('No convergence')
+        return
     output_pageranks(pageranks)
     print("#Iterations:", iterations)
     print("Time to computePageRanks():", time2-time1)
 
+def rank_airports_simmetric():
+    damping_factor = 0.9  # Change
+    airp = read_airports()
+    routes = read_routes(airp)
+    time1 = time.time()
+    pageranks = compute_pageranks_simmetric(routes)
+    time2 = time.time()
+    output_pageranks(pageranks)
+    print("Time to computePageRanks():", time2-time1)
+
 #rank_simple_graph()
-rank_airports()
+#rank_airports()
+rank_airports_simmetric()
