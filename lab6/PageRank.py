@@ -77,8 +77,7 @@ def make_dic(G, damp):
     n = len(G)
     dic = {}
     for i, L in G.items():
-        if len(L) > 0:
-            dic[i] = (1-damp)/n
+        dic[i] = (1-damp)/n
     return dic
 
 # assume all dicts have the same entries
@@ -141,4 +140,4 @@ def rank_airports():
     print("Time to computePageRanks():", time2-time1)
 
 #rank_simple_graph()
-#rank_airports()
+rank_airports()
