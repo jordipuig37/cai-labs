@@ -73,31 +73,34 @@ def read_routes(airp):
 
 
 ### AUXILIARY FUNCTIONS
-def make_dic(g, dif):
-    n = len(g)
-    d = {}
-    for i, l in g.items():
-        if len(l) > 0:
-            d[i] = (1-dif)/n
-    return d
+def make_dic(G, damp):
+    n = len(G)
+    dic = {}
+    for i, L in G.items():
+        if len(L) > 0:
+            dic[i] = (1-damp)/n
+    return dic
 
 # assume all dicts have the same entries
 def dict_dist(d1, d2):
     s = 0
     for k in d1.keys():
-        s += (d1[k] + d2[k])**2
+        if k in d2.keys():
+            s += (d1[k] + d2[k])**2
+        else:
+            s += d1[k]**2
     return sqrt(s)
 
 ### MAIN FUNCTION
-def compute_pageranks(g,d):
-    n = len(g)
-    P = make_dic(g, 0)
+def compute_pageranks(G, d):
+    n = len(G)
+    P = make_dic(G, 0)
     iterations = 0
     distance = 1
     while distance > 10e-3:
         iterations += 1
-        Pnew = make_dic(g, d)
-        for i , L in g.items():
+        Pnew = make_dic(G, d)
+        for i , L in G.items():
             if len(L) == 0:
                 pass
             else:
