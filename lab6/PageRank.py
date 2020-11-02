@@ -3,6 +3,7 @@
 import time
 import sys
 from math import sqrt
+import numpy as np
 
 # a simple 4-node graph from the course slides
 simple_graph = {
@@ -70,9 +71,42 @@ def read_routes(airp):
 
     return route_dict
 
+
+### AUXILIARY FUNCTIONS
+def make_dic(g, dif):
+    n = len(g)
+    d = {}
+    for i, l in g.items():
+        if len(l) > 0:
+            d[i] = (1-dif)/n
+    return d
+
+# assume all dicts have the same entries
+def dict_dist(d1, d2):
+    s = 0
+    for k in d1.keys():
+        s += (d1[k] + d2[k])**2
+    return sqrt(s)
+
+### MAIN FUNCTION
 def compute_pageranks(g,d):
-    # write your code
-    pass
+    n = len(g)
+    P = make_dic(g, 0)
+    iterations = 0
+    distance = 1
+    while distance > 10e-3:
+        iterations += 1
+        Pnew = make_dic(g, d)
+        for i , L in g.items():
+            if len(L) == 0:
+                pass
+            else:
+            # L = [ j for (i,j) in E]
+                for j in L:
+                    Pnew[j] += d * P[i] / len(L) ## we make sure it is not 0
+        distance = dict_dist(P, Pnew)
+        P = Pnew
+    return P, iterations
 
 def output_pageranks(l):
     l = [(key,val) for key,val in l.items()]
@@ -104,5 +138,5 @@ def rank_airports():
     print("#Iterations:", iterations)
     print("Time to computePageRanks():", time2-time1)
 
-rank_simple_graph()
+#rank_simple_graph()
 #rank_airports()
