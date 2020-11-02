@@ -84,11 +84,16 @@ def make_dic(G, damp):
 # assume all dicts have the same entries
 def dict_dist(d1, d2):
     s = 0
+    
     for k in d1.keys():
         if k in d2.keys():
             s += (d1[k] - d2[k])**2
         else:
             s += d1[k]**2
+
+    for k in d2.keys():
+        if not(k in d1.keys()):
+            s += d2[k]**2
     return sqrt(s)
 
 ### MAIN FUNCTION
