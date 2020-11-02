@@ -119,7 +119,7 @@ def compute_pageranks_simmetric(G):
         E += len(L)
         P[i] = len(L)
     for k in P.keys():
-        P[k] /= 2 * E
+        P[k] /= E
     return P
 
 def output_pageranks(l):
