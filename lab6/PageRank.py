@@ -86,7 +86,7 @@ def dict_dist(d1, d2):
     s = 0
     for k in d1.keys():
         if k in d2.keys():
-            s += (d1[k] + d2[k])**2
+            s += (d1[k] - d2[k])**2
         else:
             s += d1[k]**2
     return sqrt(s)
