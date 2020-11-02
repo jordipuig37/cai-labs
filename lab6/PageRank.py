@@ -102,6 +102,7 @@ def compute_pageranks(G, d):
             out = len(L)
             if out == 0:
                 out = n
+                L = make_dic(G, 0)
             # L = [ j for (i,j) in E]
             for j in L:
                 Pnew[j] += d * P[i] / out ## we make sure it is not 0
