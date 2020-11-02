@@ -95,16 +95,16 @@ def compute_pageranks(G, d):
     P = make_dic(G, 0)
     iterations = 0
     distance = 1
-    while distance > 10e-3:
+    while distance > 10e-7:
         iterations += 1
         Pnew = make_dic(G, d)
         for i , L in G.items():
-            if len(L) == 0:
-                pass
-            else:
+            out = len(L)
+            if out == 0:
+                out = n
             # L = [ j for (i,j) in E]
-                for j in L:
-                    Pnew[j] += d * P[i] / len(L) ## we make sure it is not 0
+            for j in L:
+                Pnew[j] += d * P[i] / out ## we make sure it is not 0
         distance = dict_dist(P, Pnew)
         P = Pnew
     return P, iterations
