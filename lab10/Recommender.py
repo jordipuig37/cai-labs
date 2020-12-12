@@ -76,6 +76,60 @@ class Recommender(object):
        adequate for a user whose rating list is rating_list"""
     def recommend_user_to_user(self,rating_list,k):
         pass
+    
+    """Gets rating given the user and the film"""    
+    def _get_rating(userid, movieid):
+        userid, movieid = str(userid), str(movieid)
+        for x in _user_ratings[userid]:
+            if x[0] == movieid:
+                return float(x[1])
+        return None
+
+    """Similarity as Pearson Correlation of films"""
+    def sim(id1, id2):    
+        id1, id2 = str(id1), str(id2)
+        
+        # Users who have seen both films
+        if (not(id1 in self._movie_ratings)) or \
+           (not(id2 in self._movie_ratings)): # Non-existing index
+            return 0
+        users1 = set([x[0] for x in self._movie_ratings[id1]])
+        users2 = set([x[0] for x in self._movie_ratings[id2]])
+        users = list(users1 & users2)
+        
+        # Ratings of those users
+        rating1 = np.array([self._get_rating(user, id1) for user in users])
+        rating2 = np.array([self._get_rating(user, id2) for user in users])
+        
+        # Pearson correlation
+        mean1 = np.mean([float(x[1]) for x in self._movie_ratings[id1]])
+        mean2 = np.mean([float(x[1]) for x in self._movie_ratings[id2]])
+        num = np.dot(rating1 - mean1, rating2 - mean2)
+
+        sd1 = np.sqrt(np.sum((rating1 - mean1)**2))
+        sd2 = np.sqrt(np.sum((rating2 - mean2)**2))
+        den = sd1 * sd2
+        
+        # Special cases
+        if (den == 0):
+            return 0
+        
+        return num / den 
+
+    """Gets prediction given user and film, based on item-to-item CF"""
+    def pred(user, film):
+        user, film = str(user), str(film)
+        mean_rating = np.mean([float(x[1]) for x in self._movie_ratings[film]])
+        films_user = [x[0] for x in self._user_ratings[user]]
+        num, den = 0, 0
+        for movie in films_user:
+            s = self.sim(film, movie)
+            r = self._get_rating(user, movie)
+            mean_r = np.mean([float(x[1]) for x in self._movie_ratings[movie]])
+            
+            num += s * (r - mean_r)
+            den += s
+        return mean_rating + num / den   
 
     """returns a list of at most k pairs (movieid,predicted_rating)
        adequate for a user whose rating list is rating_list"""
