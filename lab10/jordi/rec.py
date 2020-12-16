@@ -42,7 +42,7 @@ class Recommender(object):
             if movieid not in self._movie_ratings:
                 self._movie_ratings[movieid] = {}
             self._movie_ratings[movieid][userid] = rating
-        f.close
+        f.close()
 
     """returns a dictionary of pairs(userid,rating) of users that
        have rated movie movieid"""
