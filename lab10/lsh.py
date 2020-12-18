@@ -35,7 +35,7 @@ class LSH(object):
         """ k is nr. of bits to hash and m is reapeats """
         self._user_ratings = _user_ratings
         self._movie_ratings = _movie_ratings
-        self.k, self.m = 20, 5
+        self.k, self.m = k, m
         self.hashes = [dict() for _ in range(self.m)]
 
         self.strlen = len(_user_ratings) * 10 # 10 possible ratings
