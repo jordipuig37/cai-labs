@@ -72,6 +72,22 @@ class Recommender(object):
             return self._movie_names[movieid]
         return None
 
+    def sum_sims(self, ref_u, movie, users, factor):
+        total = 0
+        for user in users:
+            d = user_sim(ref_u, self.get_user_ratings(user))
+            r_b = np.mean(self.get_user_ratings(user).values())
+            rbs = self.get_user_ratings(user)[movie]
+            total += d * (rbs - r_b)**factor
+
+    def predict_user_to_user(self, ref_user, movie, users):
+        s1 = self.sum_sims(ref_user, users, movie, 1)
+        s2 = self.sum_sims(ref_user, users, movie, 0)
+        mean_ref = np.mean(ref_user.values())
+        if s2 == 0:
+            return mean_ref # o 0?
+        return mean_ref + s1 / s2
+
     """ This function takes a list of tuples and returns an equivalent dictionary
         assuming no key is repeated"""
     def dictionarize(self, list_of_tuples):
@@ -135,6 +151,7 @@ class Recommender(object):
             if len(closest) < k:
                 closest.append((d, userID))
             elif len(closest) == k:
+                closest.append((d, userID))
                 heapify(closest)
             else:
                 heappush(heap, (d,userID))
@@ -144,26 +161,32 @@ class Recommender(object):
                 l.append(u)
             return l
 
+    def get_movies_from_users(self, users):
+        s = set()
+        for user in users:
+            mov = set(self._movie_ratings[user].keys())
+            s = s & mov
+        return list(s)
 
-    """ Returns the k best movies rated by users in users. """
-    def best_rated(self, users, k):
+    """ . """
+    def best_rated(self, ref_user, users, k):
         # for each user add the movie rating to dictionary a list
-        movie_ratings_lists = self.get_ratings(users)
-        # compute the mean of each list and save it into a list
-        means = self.compute_list_means(movie_ratings_lists)
-        #sort the list and pick the k firsts elements
-        means.sort(key = lambda x: x[1])
-        return means[0:k]
+        predicted = []
+        movies = self.get_movies_from_users(users)
+        for movie in movies:
+            predicted.append((movie, self.predict_user_to_user(ref_user, movie, users)))
+        predicted.sort(key = lambda x: x[1])
+        return predicted[0:k]
 
-    """returns a list of at most k pairs (movieid,predicted_rating)
-       adequate for a user whose rating list is rating_list"""
+    """ returns a list of at most k pairs (movieid,predicted_rating)
+       adequate for a user whose rating list is rating_list """
     def recommend_user_to_user(self, rating_list, k):
         # 1. kNN with Similarity
         c = 10 ### on definim aixo¿????
         ref = self.dictionarize(rating_list) # transform the rating_list into a dictionary
         users = self.search_kNN_users(ref, c) # a list of usersID
         # 2. best movies from 1.
-        candidates = self.best_rated(users, k)
+        candidates = self.best_rated(ref, users, k)
         # 3. select k best movies not in rating_list
         response = []
         for movie, rating in candidates:
@@ -179,7 +202,7 @@ class Recommender(object):
                 return float(x[1])
         return None
 
-    """Similarity as Pearson Correlation of films"""
+    """ Similarity as Pearson Correlation of films """
     def sim(self, id1, id2):
         id1, id2 = str(id1), str(id2)
 
@@ -247,11 +270,9 @@ class Recommender(object):
 def main():
     os.chdir('./ml-latest-small/')
     r = Recommender("movies.csv","ratings.csv")
-    rating_list = [('1', 0.5),('5', 5.0),('7',3.5), ('11',2.5), ('15',0.5),
-               ('1328',5.0), ('55292', 4.0), ('109569', 3.0),
-              ('5323', 3.5), ('27793', 4.5), ('3768', 0.5)]
+    rating_list = [('109487', 4.5),('296', 4),('79357',5), ('74458',4.5), ('122886',3.5), ('260',4.0)]
     print("user to user random recomendations", r.recommend_user_to_user(rating_list, 7))
-    print("item to item random recomendations", r.recommend_item_to_item(rating_list, 7))
+    # print("item to item random recomendations", r.recommend_item_to_item(rating_list, 7))
 
 
 main()
