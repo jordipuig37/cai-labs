@@ -1,6 +1,7 @@
 import csv
 import os
 import numpy as np
+from lsh import LSH
 
 """implements a recommender system built from
    a movie list name
@@ -9,7 +10,7 @@ import numpy as np
 class Recommender(object):
 
     #"""initializes a recommender from a movie file and a ratings file"""
-    def __init__(self,movie_filename,rating_filename):
+    def __init__(self,movie_filename,rating_filename, k, m):
 
         # read movie file and create dictionary _movie_names
         self._movie_names = {}
@@ -43,6 +44,8 @@ class Recommender(object):
                 self._movie_ratings[movieid] = {}
             self._movie_ratings[movieid][userid] = float(rating)
         f.close()
+
+        self.me = LSH(k, m, self._user_ratings, self._movie_ratings)
 
     """returns a list of pairs (userid,rating) of users that
        have rated movie movieid"""
@@ -260,8 +263,9 @@ class Recommender(object):
        adequate for a user whose rating list is rating_list"""
     def recommend_item_to_item(self,rating_list,k):
         films = set([x[0] for x in rating_list])
+        nearest_films = self.me.get_nearest_films(films)
         recom = []
-        for movie in self._movie_ratings.keys():
+        for movie in nearest_films:
             if not(movie in films):
                 recom.append((movie, self.pred(rating_list, movie)))
         recom.sort(key=lambda x : -x[1])
@@ -269,10 +273,10 @@ class Recommender(object):
 
 def main():
     os.chdir('./ml-latest-small/')
-    r = Recommender("movies.csv","ratings.csv")
-    rating_list = [('109487', 4.5),('296', 4),('79357',5), ('74458',4.5), ('122886',3.5), ('260',4.0)]
+    r = Recommender("movies.csv","ratings.csv", 20, 1)
+    rating_list = [('1', 4.5),('296', 4),('7',5), ('74458',4.5), ('15',3.5), ('260',4.0)]
     print("user to user random recomendations", r.recommend_user_to_user(rating_list, 7))
-    # print("item to item random recomendations", r.recommend_item_to_item(rating_list, 7))
+    print("item to item random recomendations", r.recommend_item_to_item(rating_list, 7))
 
 
 main()
