@@ -2,6 +2,50 @@ import csv
 import os
 import numpy as np
 
+""" Utils
+by Jordi ;)
+"""
+""" This function takes a list of tuples and returns an equivalent dictionary
+    assuming no key is repeated"""
+def dictionarize(list_of_tuples):
+    result = dict()
+    for k, v in list_of_tuples:
+        result[k] = v
+    return result
+
+""" This function takes a dictionary of lists and returns a list of list of tuples
+    where each pair is (move, mean(rating))"""
+def compute_list_means(lists):
+    l = []
+    for movie, list_of_ratings in lists.items():
+        l.append((movie, np.mean(list_of_ratings)))
+    return l
+
+"""Similarity as Pearson Correlation of users"""
+# given two users in dictionary format returns their similarity
+def user_sim(u1, u2):
+    movies1 = set(u1.keys())
+    movies2 = set(u2.keys())
+    movies = list(movies1 & movies2)
+    # what if movies = ø?
+    # Ratings of those movies
+    rating1 = np.array([float(u1[movie]) for movie in movies])
+    rating2 = np.array([float(u2[movie]) for movie in movies])
+
+    # Pearson correlation
+    mean1 = np.mean(rating1)
+    mean2 = np.mean(rating2)
+    num = np.dot(rating1 - mean1, rating2 - mean2)
+
+    sd1 = np.sqrt(np.sum((rating1 - mean1)**2))
+    sd2 = np.sqrt(np.sum((rating2 - mean2)**2))
+    den = sd1 * sd2
+
+    # Special cases
+    if (den == 0):
+        return 0
+
+    return num / den
 """implements a recommender system built from
    a movie list name
    a listing of userid+movieid+rating"""
@@ -72,12 +116,63 @@ class Recommender(object):
             return self._movie_names[movieid]
         return None
 
+    """ returns all the ratings of all the users in users.
+        also the result is a dictionary of lists of ratigns for movies
+        (K,V) = ('movieid', [list_of_ratings]). """
+    def get_ratings(self, users):
+        ratings = dict()
+        for user in users:
+            for movie, r in self.get_user_ratings(user).items():
+                if movie not in ratings:
+                    ratings[movie] = []
+                ratings[movie].append(float(r))
+        return ratings
+    
+    """ Returns the list of k nearest users to the reference. """
+    def search_kNN_users(self, reference, k):
+        closest = []
+        for userID, uRatings in self._user_ratings.items():
+            d = user_sim(reference, uRatings)
+            if len(closest) < k:
+                closest.append((d, userID))
+            elif len(closest) == k:
+                heapify(closest)
+            else:
+                heappush(heap, (d,userID))
+                heappop(heap)
+            l = []
+            for d, u in closest:
+                l.append(u)
+            return l
+
+
+    """ Returns the k best movies rated by users in users. """
+    def best_rated(self, users, k):
+        # for each user add the movie rating to dictionary a list
+        movie_ratings_lists = self.get_ratings(users)
+        # compute the mean of each list and save it into a list
+        means = compute_list_means(movie_ratings_lists)
+        #sort the list and pick the k firsts elements
+        means.sort(key = lambda x: x[1])
+        return means[0:k]
+
     """returns a list of at most k pairs (movieid,predicted_rating)
        adequate for a user whose rating list is rating_list"""
-    def recommend_user_to_user(self,rating_list,k):
-        pass
-    
-    """Gets rating given the user and the film"""    
+    def recommend_user_to_user(self, rating_list, k):
+        # 1. kNN with Similarity
+        c = 10 ### on definim aixo¿????
+        ref = dictionarize(rating_list) # transform the rating_list into a dictionary
+        users = self.search_kNN_users(ref, c) # a list of usersID
+        # 2. best movies from 1.
+        candidates = self.best_rated(users, k)
+        # 3. select k best movies not in rating_list
+        response = []
+        for movie, rating in candidates:
+            if movie not in ref:
+                response.append(movie)
+        return response
+
+    """Gets rating given the user and the film"""
     def _get_rating(userid, movieid):
         userid, movieid = str(userid), str(movieid)
         for x in _user_ratings[userid]:
@@ -86,9 +181,9 @@ class Recommender(object):
         return None
 
     """Similarity as Pearson Correlation of films"""
-    def sim(self, id1, id2):    
+    def sim(self, id1, id2):
         id1, id2 = str(id1), str(id2)
-    
+
         # Users who have seen both films
         if (not(id1 in self._movie_ratings)) or \
         (not(id2 in self._movie_ratings)): # Non-existing index
@@ -96,11 +191,11 @@ class Recommender(object):
         users1 = set(self._movie_ratings[id1].keys())
         users2 = set(self._movie_ratings[id2].keys())
         users = list(users1 & users2)
-        
+
         # Ratings of those users
         rating1 = np.array([self._movie_ratings[id1][user] for user in users])
         rating2 = np.array([self._movie_ratings[id2][user] for user in users])
-        
+
         # Pearson correlation
         mean1 = np.mean(list(self._movie_ratings[id1].values()))
         mean2 = np.mean(list(self._movie_ratings[id2].values()))
@@ -109,12 +204,12 @@ class Recommender(object):
         sd1 = np.sqrt(np.sum((rating1 - mean1)**2))
         sd2 = np.sqrt(np.sum((rating2 - mean2)**2))
         den = sd1 * sd2
-        
+
         # Special cases
         if (den == 0):
             return 0
-        
-        return num / den  
+
+        return num / den
 
     """Gets prediction given user and film, based on item-to-item CF"""
     def pred(self, rating_list, film):
@@ -130,13 +225,13 @@ class Recommender(object):
             s = abs(self.sim(film, movie))
             r = x[1] # user rating of movie
             mean_r = np.mean(list(self._movie_ratings[movie].values()))
-            
+
             num += s * (r - mean_r)
             den += s
         # Special case
-        if den == 0: 
+        if den == 0:
             return mean_rating
-        return mean_rating + num / den  
+        return mean_rating + num / den
 
     """returns a list of at most k pairs (movieid,predicted_rating)
        adequate for a user whose rating list is rating_list"""
@@ -152,13 +247,11 @@ class Recommender(object):
 def main():
     os.chdir('./ml-latest-small/')
     r = Recommender("movies.csv","ratings.csv")
-    print(len(r.movieid_list())," movies with ratings from ",len(r.userid_list()),"different users")
-    print("The name of movie 1 is: ",r.movie_name("1"))
-    print("movie 1 was recommended by ",r.get_movie_ratings("1"))
-    print("user 1 recommended movies ",r.get_user_ratings("1"))
-    rating_list = [('1', 0.5),('5', 5.0),('7',3.5), ('11',2.5), ('15',0.5), 
+    rating_list = [('1', 0.5),('5', 5.0),('7',3.5), ('11',2.5), ('15',0.5),
                ('1328',5.0), ('55292', 4.0), ('109569', 3.0),
               ('5323', 3.5), ('27793', 4.5), ('3768', 0.5)]
-    print("user random recomendations", r.recommend_item_to_item(rating_list, 7))
+    print("user to user random recomendations", r.recommend_user_to_user(rating_list, 7))
+    print("item to item random recomendations", r.recommend_item_to_item(rating_list, 7))
+
 
 main()
