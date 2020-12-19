@@ -2,6 +2,7 @@ import csv
 import os
 import numpy as np
 from lsh import LSH
+from heapq import heapify, heappush, heappop
 
 """implements a recommender system built from
    a movie list name
@@ -54,7 +55,7 @@ class Recommender(object):
             return self._movie_ratings[movieid]
         return None
 
-    """returns a list of pairs (movieid,rating) of movies
+    """returns a dictionary of pairs (movieid,rating) of movies
        rated by user userid"""
     def get_user_ratings(self,userid):
         if userid in self._user_ratings:
@@ -74,38 +75,6 @@ class Recommender(object):
         if movieid in self._movie_names:
             return self._movie_names[movieid]
         return None
-
-    def sum_sims(self, ref_u, movie, users, factor):
-        total = 0
-        for user in users:
-            d = user_sim(ref_u, self.get_user_ratings(user))
-            r_b = np.mean(self.get_user_ratings(user).values())
-            rbs = self.get_user_ratings(user)[movie]
-            total += d * (rbs - r_b)**factor
-
-    def predict_user_to_user(self, ref_user, movie, users):
-        s1 = self.sum_sims(ref_user, users, movie, 1)
-        s2 = self.sum_sims(ref_user, users, movie, 0)
-        mean_ref = np.mean(ref_user.values())
-        if s2 == 0:
-            return mean_ref # o 0?
-        return mean_ref + s1 / s2
-
-    """ This function takes a list of tuples and returns an equivalent dictionary
-        assuming no key is repeated"""
-    def dictionarize(self, list_of_tuples):
-        result = dict()
-        for k, v in list_of_tuples:
-            result[k] = v
-        return result
-
-    """ This function takes a dictionary of lists and returns a list of list of tuples
-        where each pair is (move, mean(rating))"""
-    def compute_list_means(self, lists):
-        l = []
-        for movie, list_of_ratings in lists.items():
-            l.append((movie, np.mean(list_of_ratings)))
-        return l
 
     """Similarity as Pearson Correlation of users"""
     # given two users in dictionary format returns their similarity
@@ -134,6 +103,42 @@ class Recommender(object):
 
         return num / den
 
+    def sum_sims(self, ref_u, movie, users, factor):
+        total = 0
+        for user in users:
+            d = self.user_sim(ref_u, self.get_user_ratings(user))
+            r_b = np.mean(list(self.get_user_ratings(user).values()))
+            if movie in self.get_user_ratings(user):
+                rbs = self.get_user_ratings(user)[movie]
+            else:
+                rbs = 0 # what?
+            total += d * (rbs - r_b)**factor
+        return total
+
+    def predict_user_to_user(self, ref_user, movie, users):
+        s1 = self.sum_sims(ref_user, movie, users, 1)
+        s2 = self.sum_sims(ref_user, movie, users, 0)
+        mean_ref = np.mean(list(ref_user.values()))
+        if s2 == 0:
+            return mean_ref # o 0?
+        return mean_ref + s1 / s2
+
+    """ This function takes a list of tuples and returns an equivalent dictionary
+        assuming no key is repeated"""
+    def dictionarize(self, list_of_tuples):
+        result = dict()
+        for k, v in list_of_tuples:
+            result[k] = v
+        return result
+
+    """ This function takes a dictionary of lists and returns a list of list of tuples
+        where each pair is (move, mean(rating))"""
+    def compute_list_means(self, lists):
+        l = []
+        for movie, list_of_ratings in lists.items():
+            l.append((movie, np.mean(list_of_ratings)))
+        return l
+
     """ returns all the ratings of all the users in users.
         also the result is a dictionary of lists of ratigns for movies
         (K,V) = ('movieid', [list_of_ratings]). """
@@ -157,18 +162,18 @@ class Recommender(object):
                 closest.append((d, userID))
                 heapify(closest)
             else:
-                heappush(heap, (d,userID))
-                heappop(heap)
-            l = []
-            for d, u in closest:
-                l.append(u)
-            return l
+                heappush(closest, (d,userID))
+                heappop(closest)
+        l = []
+        for d, u in closest:
+            l.append(u)
+        return l
 
     def get_movies_from_users(self, users):
         s = set()
         for user in users:
-            mov = set(self._movie_ratings[user].keys())
-            s = s & mov
+            mov = set(self._user_ratings[user].keys())
+            s = s | mov
         return list(s)
 
     """ . """
