@@ -4,6 +4,8 @@ import numpy as np
 from lsh import LSH
 from heapq import heapify, heappush, heappop
 
+from easyinput import read # to read from a file or terminal
+
 """implements a recommender system built from
    a movie list name
    a listing of userid+movieid+rating"""
@@ -190,7 +192,7 @@ class Recommender(object):
        adequate for a user whose rating list is rating_list """
     def recommend_user_to_user(self, rating_list, k):
         # 1. kNN with Similarity
-        c = 10 ### on definim aixo¿????
+        c = 20 ### on definim aixo¿????
         ref = self.dictionarize(rating_list) # transform the rating_list into a dictionary
         users = self.search_kNN_users(ref, c) # a list of usersID
         # 2. best movies from 1.
@@ -276,10 +278,21 @@ class Recommender(object):
         recom.sort(key=lambda x : -x[1])
         return recom[:k]
 
+def read_list():
+    l = []
+    a = read(str)
+    b = read(float)
+    while a is not None and b is not None:
+        l.append((a, b))
+        a = read(str)
+        b = read(float)
+    return l
+
+
 def main():
     os.chdir('./ml-latest-small/')
     r = Recommender("movies.csv","ratings.csv", 20, 1)
-    rating_list = [('1', 4.5),('296', 4),('7',5), ('74458',4.5), ('15',3.5), ('260',4.0)]
+    rating_list = read_list()
     print("user to user random recomendations", r.recommend_user_to_user(rating_list, 7))
     print("item to item random recomendations", r.recommend_item_to_item(rating_list, 7))
 
