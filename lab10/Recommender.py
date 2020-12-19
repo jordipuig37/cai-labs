@@ -13,7 +13,10 @@ from easyinput import read # to read from a file or terminal
 class Recommender(object):
 
     #"""initializes a recommender from a movie file and a ratings file"""
-    def __init__(self,movie_filename,rating_filename, k, m):
+    def __init__(self,movie_filename,rating_filename, k, m, c):
+
+        # Hyperparameter
+        self.c = c
 
         # read movie file and create dictionary _movie_names
         self._movie_names = {}
@@ -29,8 +32,8 @@ class Recommender(object):
 
         # read rating file and create _movie_ratings (ratings for a movie)
         # and _user_ratings (ratings by a user) dicts
-        self._movie_ratings = {}
-        self._user_ratings = {}
+        self._movie_ratings, self._movie_time = {}, {}
+        self._user_ratings, self._user_time = {}, {}
         f = open(rating_filename,"r",encoding="utf8")
         reader = csv.reader(f)
         next(reader)  # skips header line
@@ -38,14 +41,18 @@ class Recommender(object):
             userid = line[0]
             movieid = line[1]
             rating = line[2]
-            # ignore line[3], timestamp
+            timestamp = line[3]
             if userid not in self._user_ratings:
                 self._user_ratings[userid] = {} # each user is a dict with movies and ratings
+                self._user_time[userid] = {}
             self._user_ratings[userid][movieid] = float(rating)
+            self._user_time[userid][movieid] = float(timestamp)
 
             if movieid not in self._movie_ratings:
                 self._movie_ratings[movieid] = {}
+                self._movie_time[movieid] = {}
             self._movie_ratings[movieid][userid] = float(rating)
+            self._movie_time[movieid][userid] = float(timestamp)
         f.close()
 
         self.me = LSH(k, m, self._user_ratings, self._movie_ratings)
@@ -195,9 +202,8 @@ class Recommender(object):
        adequate for a user whose rating list is rating_list """
     def recommend_user_to_user(self, rating_list, k, enhanced):
         # 1. kNN with Similarity
-        c = 20 ### on definim aixo¿????
         ref = self.dictionarize(rating_list) # transform the rating_list into a dictionary
-        users = self.search_kNN_users(ref, c, enhanced) # a list of usersID
+        users = self.search_kNN_users(ref, self.c, enhanced) # a list of usersID
         # 2. best movies from 1.
         candidates = self.best_rated(ref, users, k, enhanced)
         # 3. select k best movies not in rating_list
@@ -206,14 +212,6 @@ class Recommender(object):
             if movie not in ref:
                 response.append(movie)
         return response
-
-    """Gets rating given the user and the film"""
-    def _get_rating(userid, movieid):
-        userid, movieid = str(userid), str(movieid)
-        for x in _user_ratings[userid]:
-            if x[0] == movieid:
-                return float(x[1])
-        return None
 
     """ Similarity as Pearson Correlation of films """
     def sim(self, id1, id2, enhanced):
@@ -253,10 +251,6 @@ class Recommender(object):
     """Gets prediction given user and film, based on item-to-item CF"""
     def pred(self, rating_list, film, enhanced):
         film = str(film)
-        # Shouldn't happend
-        if film not in self._movie_ratings:
-            print('Film not existing')
-            return 0
         mean_rating = np.mean(list(self._movie_ratings[film].values()))
         num, den = 0, 0
         for x in rating_list:
@@ -307,7 +301,7 @@ def read_list():
 def main():
     os.chdir('./ml-latest-small/')
     print('Hashing...')
-    r = Recommender("movies.csv","ratings.csv", 20, 1)
+    r = Recommender("movies.csv","ratings.csv", 20, 1, 10)
     print('Finished hashing')
     rating_list = read_list()
     while len(rating_list) > 0:
@@ -319,4 +313,5 @@ def main():
         rating_list = read_list()
 
 
-main()
+if __name__ == '__main__':
+    main()
